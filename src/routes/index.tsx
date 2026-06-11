@@ -75,7 +75,7 @@ const REVIEWS = [
   },
   {
     quote:
-      "Rooftop restaurant experience amazing — all the staff were helpful and courteous. Felt like a five-star hotel.",
+      "Rooftop restaurant experience amazing all the staff were helpful and courteous. Felt like a five star hotel.",
     name: "Priya K.",
     source: "TripAdvisor",
   },
@@ -126,7 +126,7 @@ function Hero() {
           <span className="text-gold">Beyond Ordinary.</span>
         </h1>
         <p className="mt-6 max-w-xl text-base text-ivory/80 sm:text-lg">
-          A multi-cuisine dining destination perched six floors above Lake Victoria —
+          A multi cuisine dining destination perched six floors above Lake Victoria&nbsp;
           where the horizon meets your table.
         </p>
         <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:gap-4">
@@ -216,7 +216,7 @@ function AboutSection() {
                 <span className="text-gold italic">above Lake Victoria</span>
               </>
             }
-            description="Six floors up, the horizon stretches in every direction. Multi-cuisine kitchens send aromas into the open air, candlelight catches the brass of a cocktail shaker, and a warm Ugandan welcome makes the rooftop feel — quite simply — like home above the lake."
+            description="Six floors up, the horizon stretches in every direction. Multi-cuisine kitchens send aromas into the open air, candlelight catches the brass of a cocktail shaker, and a warm Ugandan welcome makes the rooftop feel&nbsp; quite simply&nbsp; like home above the lake."
           />
           <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-4">
             {[
