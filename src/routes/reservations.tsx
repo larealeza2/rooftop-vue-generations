@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, useRef, type FormEvent } from "react";
 import { z } from "zod";
 import { MapPin, Phone, Mail, Award, Check } from "lucide-react";
 import privateImg from "@/assets/exp-private.jpg";
@@ -46,10 +46,20 @@ function ReservationsPage() {
 
   const [submitted, setSubmitted] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<string>("");
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const dateRef = useRef<HTMLInputElement | null>(null);
 
-  function onSubmit(e: FormEvent<HTMLFormElement>) {
+  useEffect(() => {
+    const today = new Date().toISOString().split("T")[0];
+    const el = document.querySelector<HTMLInputElement>('input[type="date"]');
+    if (el) el.min = today;
+  }, []);
+
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
+    setSubmitError(null);
     const formData = new FormData(e.currentTarget);
     const data = Object.fromEntries(formData.entries());
     const parsed = reservationSchema.safeParse(data);
@@ -57,7 +67,16 @@ function ReservationsPage() {
       setError(parsed.error.errors[0]?.message ?? "Please complete all required fields");
       return;
     }
-    setSubmitted(parsed.data.name);
+    try {
+      const res = await fetch("https://formsubmit.co/mcleanmclean25@gmail.com", {
+        method: "POST",
+        body: formData,
+      });
+      if (!res.ok) throw new Error("Request failed");
+      setSubmitted(parsed.data.name);
+    } catch {
+      setSubmitError("Something went wrong. Please try again.");
+    }
   }
 
   return (
@@ -96,6 +115,8 @@ function ReservationsPage() {
                 Complete the form below and our team will confirm your reservation within 24 hours.
               </p>
               <form onSubmit={onSubmit} className="mt-10 space-y-6">
+                <input type="hidden" name="_captcha" value="false" />
+                <input type="hidden" name="_subject" value="New Reservation Submission" />
                 <Field label="Full Name" name="name" required type="text" />
                 <div className="grid gap-6 sm:grid-cols-2">
                   <Field label="Email Address" name="email" required type="email" />
@@ -123,7 +144,53 @@ function ReservationsPage() {
                 </div>
                 <Textarea label="Special Requests" name="notes" placeholder="Dietary requirements, décor preferences, accessibility needs..." />
 
+                <fieldset className="space-y-4 border border-gold/20 p-5">
+                  <legend className="px-2 text-[0.7rem] uppercase tracking-[0.22em] text-gold">Payment Method</legend>
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    {[
+                      { v: "Airtel Money", l: "Airtel Money" },
+                      { v: "MTN Mobile Money", l: "MTN Mobile Money" },
+                      { v: "Credit/Debit Card", l: "Credit/Debit Card" },
+                    ].map((opt) => (
+                      <label key={opt.v} className="flex cursor-pointer items-center gap-2 border border-gold/25 bg-night-2 px-4 py-3 text-sm text-ivory hover:border-gold">
+                        <input
+                          type="radio"
+                          name="paymentMethod"
+                          value={opt.v}
+                          checked={paymentMethod === opt.v}
+                          onChange={(e) => setPaymentMethod(e.target.value)}
+                          className="accent-gold"
+                        />
+                        <span>{opt.l}</span>
+                      </label>
+                    ))}
+                  </div>
+
+                  {paymentMethod === "Airtel Money" && (
+                    <div>
+                      <Field label="Enter Merchant Code" name="airtelMerchantCode" type="text" required />
+                    </div>
+                  )}
+
+                  {paymentMethod === "MTN Mobile Money" && (
+                    <div>
+                      <Field label="MTN Phone Number" name="mtnPhoneNumber" type="tel" required />
+                    </div>
+                  )}
+
+                  {paymentMethod === "Credit/Debit Card" && (
+                    <div className="space-y-6">
+                      <Field label="Card Number" name="cardNumber" type="text" maxLength={19} placeholder="XXXX XXXX XXXX XXXX" required />
+                      <div className="grid gap-6 sm:grid-cols-2">
+                        <Field label="Expiry Date" name="cardExpiry" type="text" placeholder="MM/YY" required />
+                        <Field label="CVV" name="cardCvv" type="password" maxLength={4} required />
+                      </div>
+                    </div>
+                  )}
+                </fieldset>
+
                 {error && <p className="text-sm text-destructive">{error}</p>}
+                {submitError && <p className="text-sm text-destructive">Something went wrong. Please try again.</p>}
 
                 <button
                   type="submit"
