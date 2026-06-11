@@ -111,10 +111,10 @@ function ExperiencesPage() {
           <div>
             <SectionHeading align="left" eyebrow="Pool & Wellness" title={<>An afternoon <em className="text-gold italic font-light">above the lake</em></>} description="Glide through our rooftop pool, work out with the lake on the horizon, then unwind in the sauna and steam room. The full K Hotels wellness floor — yours to enjoy." />
             <ul className="mt-8 grid grid-cols-2 gap-3 text-sm text-ivory/85">
-              <li className="border border-gold/20 p-4">🏊 Rooftop Swimming Pool</li>
-              <li className="border border-gold/20 p-4">💪 Fully Equipped Gym</li>
-              <li className="border border-gold/20 p-4">🧖 Sauna</li>
-              <li className="border border-gold/20 p-4">🌫 Steam Room</li>
+              <li className="border border-gold/20 p-4">Rooftop Swimming Pool</li>
+              <li className="border border-gold/20 p-4">Fully Equipped Gym</li>
+              <li className="border border-gold/20 p-4">Sauna</li>
+              <li className="border border-gold/20 p-4">Steam Room</li>
             </ul>
             <p className="mt-6 text-[0.72rem] uppercase tracking-[0.2em] text-gold">Pool Hours · 8:00 AM – 8:00 PM daily</p>
           </div>
