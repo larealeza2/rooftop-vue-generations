@@ -1,8 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import menuHero from "@/assets/menu-flatlay.jpg";
 import { SectionHeading } from "@/components/site/SectionHeading";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import type { Tables } from "@/integrations/supabase/types";
 
 export const Route = createFileRoute("/menu")({
   head: () => ({
@@ -18,112 +20,102 @@ export const Route = createFileRoute("/menu")({
   component: MenuPage,
 });
 
-type Item = { name: string; cuisine?: string; desc: string; price: string; tags?: string[] };
-type Section = { title: string; items: Item[] };
+type MenuItem = Tables<"menu_items">;
+type Section = { title: string; items: MenuItem[] };
 type Period = { id: string; label: string; sections: Section[] };
 
-const MENU: Period[] = [
-  {
-    id: "breakfast",
-    label: "Breakfast",
-    sections: [
-      {
-        title: "To Begin",
-        items: [
-          { name: "Lake Sunrise Bowl", desc: "Tropical fruits, coconut yogurt, toasted granola, local honey", price: "UGX 28,000", tags: ["V"] },
-          { name: "K Hotels Full Breakfast", desc: "Eggs your way, grilled tomato, bacon, sausage, mushrooms, toast", price: "UGX 42,000" },
-          { name: "Masala Omelette", cuisine: "Indian", desc: "Three eggs, green chili, coriander, onions, served with paratha", price: "UGX 32,000", tags: ["S"] },
-          { name: "Avocado on Sourdough", desc: "Smashed Hass avocado, chili flakes, poached egg, lime", price: "UGX 36,000", tags: ["V"] },
-        ],
-      },
-    ],
-  },
-  {
-    id: "all-day",
-    label: "All-Day Menu",
-    sections: [
-      {
-        title: "Starters",
-        items: [
-          { name: "Tandoori Prawns", cuisine: "Indian", desc: "Chargrilled prawns, yogurt-marinated, mint chutney", price: "UGX 48,000", tags: ["S", "GF"] },
-          { name: "Tilapia Ceviche", cuisine: "East African", desc: "Lake Victoria tilapia, citrus, red onion, coriander, plantain chips", price: "UGX 38,000", tags: ["GF"] },
-          { name: "Beetroot Carpaccio", cuisine: "Continental", desc: "Roasted beets, whipped goat cheese, candied walnuts", price: "UGX 32,000", tags: ["V", "GF"] },
-        ],
-      },
-      {
-        title: "Mains",
-        items: [
-          { name: "Butter Chicken", cuisine: "Indian", desc: "Slow-simmered tomato cream, fenugreek, basmati, garlic naan", price: "UGX 58,000" },
-          { name: "Grilled Tilapia", cuisine: "East African", desc: "Whole lake tilapia, kachumbari, posho or chips", price: "UGX 65,000", tags: ["GF"] },
-          { name: "Pan-Seared Sea Bass", cuisine: "Continental", desc: "Saffron risotto, charred fennel, beurre blanc", price: "UGX 78,000", tags: ["GF"] },
-          { name: "Wagyu-Style Beef Stir-Fry", cuisine: "Asian", desc: "Wok-tossed beef, ginger, scallion, jasmine rice", price: "UGX 82,000" },
-          { name: "Paneer Tikka Masala", cuisine: "Indian", desc: "Smoked paneer, creamy tomato gravy, jeera rice", price: "UGX 48,000", tags: ["V", "S"] },
-        ],
-      },
-      {
-        title: "Fast Food",
-        items: [
-          { name: "Rooftop Burger", desc: "Aged beef, smoked cheddar, caramelised onions, brioche, hand-cut fries", price: "UGX 52,000" },
-          { name: "Wood-Fired Margherita", cuisine: "Continental", desc: "San Marzano, fior di latte, basil", price: "UGX 42,000", tags: ["V"] },
-          { name: "Chicken Shawarma Wrap", desc: "Spiced chicken, garlic sauce, pickles, tahini, fries", price: "UGX 38,000" },
-        ],
-      },
-      {
-        title: "Desserts",
-        items: [
-          { name: "Dark Chocolate Fondant", desc: "Molten centre, vanilla ice cream, gold leaf", price: "UGX 28,000", tags: ["V"] },
-          { name: "Gulab Jamun", cuisine: "Indian", desc: "Warm milk dumplings in saffron-cardamom syrup", price: "UGX 22,000", tags: ["V"] },
-          { name: "Passionfruit Pavlova", desc: "Crisp meringue, vanilla cream, tropical fruits", price: "UGX 26,000", tags: ["V", "GF"] },
-        ],
-      },
-    ],
-  },
-  {
-    id: "dinner",
-    label: "Dinner",
-    sections: [
-      {
-        title: "Chef's Tasting",
-        items: [
-          { name: "Six-Course Sunset Tasting", desc: "A guided journey through our four cuisines. Available 6PM onwards.", price: "UGX 220,000" },
-          { name: "Wine Pairing", desc: "Curated five-glass pairing by our sommelier", price: "UGX 140,000" },
-        ],
-      },
-    ],
-  },
-  {
-    id: "beverages",
-    label: "Beverages & Cocktails",
-    sections: [
-      {
-        title: "Signature Cocktails",
-        items: [
-          { name: "Lake Victoria Sunset", desc: "Mango-infused gin, hibiscus, passionfruit, lime", price: "UGX 32,000" },
-          { name: "Entebbe Old Fashioned", desc: "Bourbon, vanilla, smoked sugar, orange peel", price: "UGX 38,000" },
-          { name: "Rooftop Negroni", desc: "Gin, Campari, sweet vermouth, blood orange", price: "UGX 35,000" },
-        ],
-      },
-      {
-        title: "Wine & Beer",
-        items: [
-          { name: "House Wine — Glass", desc: "Red, white or rosé", price: "UGX 22,000" },
-          { name: "Craft Beer Selection", desc: "Local & international", price: "from UGX 12,000" },
-        ],
-      },
-      {
-        title: "Non-Alcoholic",
-        items: [
-          { name: "Fresh Tropical Juice", desc: "Mango · Pineapple · Passion · Watermelon", price: "UGX 14,000", tags: ["VG"] },
-          { name: "Virgin Sunset", desc: "Hibiscus, passionfruit, soda, lime", price: "UGX 18,000", tags: ["VG"] },
-        ],
-      },
-    ],
-  },
-];
-
 function MenuPage() {
-  const [active, setActive] = useState(MENU[1].id);
-  const current = MENU.find((p) => p.id === active) ?? MENU[0];
+  const [menuData, setMenuData] = useState<Period[]>([]);
+  const [active, setActive] = useState<string>("all-day");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchMenuItems() {
+      try {
+        setLoading(true);
+        const { data, error: queryError } = await supabase
+          .from("menu_items")
+          .select("id, name, category, description, price, available")
+          .eq("available", true)
+          .order("category")
+          .order("name");
+
+        if (queryError) {
+          console.error("Supabase error:", queryError);
+          setError("Failed to load menu items");
+          setLoading(false);
+          return;
+        }
+
+        if (!data || data.length === 0) {
+          setError("No menu items available");
+          setLoading(false);
+          return;
+        }
+
+        // Group items by category
+        const groupedByCategory = data.reduce(
+          (acc, item) => {
+            const category = item.category || "Other";
+            if (!acc[category]) acc[category] = [];
+            acc[category].push(item);
+            return acc;
+          },
+          {} as Record<string, MenuItem[]>
+        );
+
+        // Create menu periods
+        const periods: Period[] = [
+          {
+            id: "all-day",
+            label: "All-Day Menu",
+            sections: Object.entries(groupedByCategory).map(([categoryName, items]) => ({
+              title: categoryName,
+              items,
+            })),
+          },
+        ];
+
+        setMenuData(periods);
+        setActive(periods[0]?.id || "all-day");
+      } catch (err) {
+        console.error("Menu fetch error:", err);
+        setError("An error occurred while loading the menu");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchMenuItems();
+  }, []);
+
+  const current = menuData.find((p) => p.id === active) ?? menuData[0];
+
+  if (error && !loading) {
+    return (
+      <>
+        <section className="relative h-[60vh] min-h-[420px] w-full overflow-hidden pt-20">
+          <img src={menuHero} alt="Overhead flat lay of signature dishes at Rooftop Restaurant K Hotels Entebbe" className="absolute inset-0 h-full w-full object-cover" />
+          <div className="absolute inset-0 bg-night/65" />
+          <div className="relative z-10 flex h-full flex-col items-center justify-center px-6 text-center">
+            <p className="eyebrow text-ivory/85">The Menu</p>
+            <h1 className="mt-4 font-display text-5xl font-light italic text-ivory sm:text-7xl">
+              Every cuisine. <span className="text-gold">One rooftop.</span>
+            </h1>
+            <p className="mt-4 text-sm uppercase tracking-[0.22em] text-ivory/75">
+              Indian · Continental · East African · Asian · Fast Food · Desserts
+            </p>
+          </div>
+        </section>
+        <section className="bg-night py-20">
+          <div className="mx-auto max-w-4xl px-6 text-center text-red-400">
+            <p>{error}</p>
+          </div>
+        </section>
+      </>
+    );
+  }
 
   return (
     <>
@@ -141,61 +133,57 @@ function MenuPage() {
         </div>
       </section>
 
-      <div className="sticky top-[68px] z-30 border-y border-gold/15 bg-night/95 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl gap-2 overflow-x-auto px-4 py-3 sm:gap-6 sm:px-8">
-          {MENU.map((p) => (
-            <button
-              key={p.id}
-              onClick={() => setActive(p.id)}
-              className={cn(
-                "whitespace-nowrap px-4 py-2 text-[0.72rem] uppercase tracking-[0.2em] transition",
-                active === p.id ? "border-b border-gold text-gold" : "text-ivory/65 hover:text-ivory",
-              )}
-            >
-              {p.label}
-            </button>
-          ))}
+      {loading ? (
+        <div className="bg-night py-20">
+          <div className="mx-auto max-w-4xl px-6 text-center text-ivory/70">
+            <p>Loading menu items...</p>
+          </div>
         </div>
-      </div>
-
-      <section className="bg-night py-20">
-        <div className="mx-auto max-w-4xl px-6 space-y-16">
-          {current.sections.map((s) => (
-            <div key={s.title}>
-              <h2 className="font-display text-3xl italic text-gold">{s.title}</h2>
-              <div className="mt-2 h-px w-16 bg-gold/60" />
-              <ul className="mt-8 space-y-7">
-                {s.items.map((item) => (
-                  <li key={item.name}>
-                    <div className="flex items-baseline gap-4">
-                      <h3 className="font-display text-2xl text-ivory">{item.name}</h3>
-                      <div className="flex-1 border-b border-dashed border-gold/25" />
-                      <span className="font-display text-lg text-gold">{item.price}</span>
-                    </div>
-                    {item.cuisine && (
-                      <p className="mt-1 text-[0.65rem] uppercase tracking-[0.22em] text-terracotta">
-                        {item.cuisine}
-                      </p>
-                    )}
-                    <p className="mt-2 max-w-3xl text-sm text-ivory/70">
-                      {item.desc}
-                      {item.tags && (
-                        <span className="ml-3 text-[0.65rem] uppercase tracking-[0.2em] text-gold/70">
-                          {item.tags.join(" · ")}
-                        </span>
-                      )}
-                    </p>
-                  </li>
-                ))}
-              </ul>
+      ) : (
+        <>
+          <div className="sticky top-[68px] z-30 border-y border-gold/15 bg-night/95 backdrop-blur">
+            <div className="mx-auto flex max-w-7xl gap-2 overflow-x-auto px-4 py-3 sm:gap-6 sm:px-8">
+              {menuData.map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => setActive(p.id)}
+                  className={cn(
+                    "whitespace-nowrap px-4 py-2 text-[0.72rem] uppercase tracking-[0.2em] transition",
+                    active === p.id ? "border-b border-gold text-gold" : "text-ivory/65 hover:text-ivory",
+                  )}
+                >
+                  {p.label}
+                </button>
+              ))}
             </div>
-          ))}
+          </div>
 
-          <p className="text-center text-[0.7rem] uppercase tracking-[0.2em] text-ivory/45">
-            V Vegetarian · VG Vegan · GF Gluten-Free · S Spicy
-          </p>
-        </div>
-      </section>
+          <section className="bg-night py-20">
+            <div className="mx-auto max-w-4xl px-6 space-y-16">
+              {current?.sections.map((s) => (
+                <div key={s.title}>
+                  <h2 className="font-display text-3xl italic text-gold">{s.title}</h2>
+                  <div className="mt-2 h-px w-16 bg-gold/60" />
+                  <ul className="mt-8 space-y-7">
+                    {s.items.map((item) => (
+                      <li key={item.id}>
+                        <div className="flex items-baseline gap-4">
+                          <h3 className="font-display text-2xl text-ivory">{item.name}</h3>
+                          <div className="flex-1 border-b border-dashed border-gold/25" />
+                          <span className="font-display text-lg text-gold">UGX {item.price?.toLocaleString()}</span>
+                        </div>
+                        <p className="mt-2 max-w-3xl text-sm text-ivory/70">
+                          {item.description}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </section>
+        </>
+      )}
 
       <section className="bg-gold py-16 text-[#1a1305]">
         <div className="mx-auto flex max-w-5xl flex-col items-center gap-6 px-6 text-center sm:flex-row sm:justify-between sm:text-left">

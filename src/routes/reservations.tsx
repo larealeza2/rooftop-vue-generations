@@ -4,6 +4,7 @@ import { z } from "zod";
 import { MapPin, Phone, Mail, Award, Check } from "lucide-react";
 import privateImg from "@/assets/exp-private.jpg";
 import { BRAND } from "@/components/site/brand";
+import { supabase } from "@/integrations/supabase/client";
 
 const searchSchema = z.object({ occasion: z.string().optional() });
 
@@ -24,7 +25,6 @@ export const Route = createFileRoute("/reservations")({
 
 const reservationSchema = z.object({
   name: z.string().trim().min(2, "Please enter your name").max(80),
-  email: z.string().trim().email("Please enter a valid email").max(120),
   phone: z.string().trim().min(7, "Please enter a phone number").max(30),
   date: z.string().min(1, "Choose a date"),
   time: z.string().min(1, "Choose a time"),
@@ -46,8 +46,8 @@ function ReservationsPage() {
 
   const [submitted, setSubmitted] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<string>("");
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const dateRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -60,22 +60,45 @@ function ReservationsPage() {
     e.preventDefault();
     setError(null);
     setSubmitError(null);
+    setIsSubmitting(true);
+
     const formData = new FormData(e.currentTarget);
     const data = Object.fromEntries(formData.entries());
     const parsed = reservationSchema.safeParse(data);
+
     if (!parsed.success) {
       setError(parsed.error.errors[0]?.message ?? "Please complete all required fields");
+      setIsSubmitting(false);
       return;
     }
+
     try {
-      const res = await fetch("https://formsubmit.co/mcleanmclean25@gmail.com", {
-        method: "POST",
-        body: formData,
-      });
-      if (!res.ok) throw new Error("Request failed");
+      const { error: insertError } = await supabase.from("reservations").insert([
+        {
+          guest_name: parsed.data.name,
+          phone: parsed.data.phone,
+          reservation_date: parsed.data.date,
+          reservation_time: parsed.data.time,
+          party_size: Number(parsed.data.guests),
+          occasion: parsed.data.occasion,
+          notes: parsed.data.notes ?? null,
+          status: "pending",
+        },
+      ]);
+
+      if (insertError) {
+        console.error("Supabase error:", insertError);
+        setSubmitError("Failed to submit reservation. Please try again.");
+        setIsSubmitting(false);
+        return;
+      }
+
       setSubmitted(parsed.data.name);
-    } catch {
+    } catch (err) {
+      console.error("Submission error:", err);
       setSubmitError("Something went wrong. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -115,11 +138,8 @@ function ReservationsPage() {
                 Complete the form below and our team will confirm your reservation within 24 hours.
               </p>
               <form onSubmit={onSubmit} className="mt-10 space-y-6">
-                <input type="hidden" name="_captcha" value="false" />
-                <input type="hidden" name="_subject" value="New Reservation Submission" />
                 <Field label="Full Name" name="name" required type="text" />
                 <div className="grid gap-6 sm:grid-cols-2">
-                  <Field label="Email Address" name="email" required type="email" />
                   <Field label="Phone Number" name="phone" required type="tel" defaultValue="+256 " />
                 </div>
                 <div className="grid gap-6 sm:grid-cols-2">
@@ -144,59 +164,15 @@ function ReservationsPage() {
                 </div>
                 <Textarea label="Special Requests" name="notes" placeholder="Dietary requirements, décor preferences, accessibility needs..." />
 
-                <fieldset className="space-y-4 border border-gold/20 p-5">
-                  <legend className="px-2 text-[0.7rem] uppercase tracking-[0.22em] text-gold">Payment Method</legend>
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    {[
-                      { v: "Airtel Money", l: "Airtel Money" },
-                      { v: "MTN Mobile Money", l: "MTN Mobile Money" },
-                      { v: "Credit/Debit Card", l: "Credit/Debit Card" },
-                    ].map((opt) => (
-                      <label key={opt.v} className="flex cursor-pointer items-center gap-2 border border-gold/25 bg-night-2 px-4 py-3 text-sm text-ivory hover:border-gold">
-                        <input
-                          type="radio"
-                          name="paymentMethod"
-                          value={opt.v}
-                          checked={paymentMethod === opt.v}
-                          onChange={(e) => setPaymentMethod(e.target.value)}
-                          className="accent-gold"
-                        />
-                        <span>{opt.l}</span>
-                      </label>
-                    ))}
-                  </div>
-
-                  {paymentMethod === "Airtel Money" && (
-                    <div>
-                      <Field label="Enter Merchant Code" name="airtelMerchantCode" type="text" required />
-                    </div>
-                  )}
-
-                  {paymentMethod === "MTN Mobile Money" && (
-                    <div>
-                      <Field label="MTN Phone Number" name="mtnPhoneNumber" type="tel" required />
-                    </div>
-                  )}
-
-                  {paymentMethod === "Credit/Debit Card" && (
-                    <div className="space-y-6">
-                      <Field label="Card Number" name="cardNumber" type="text" maxLength={19} placeholder="XXXX XXXX XXXX XXXX" required />
-                      <div className="grid gap-6 sm:grid-cols-2">
-                        <Field label="Expiry Date" name="cardExpiry" type="text" placeholder="MM/YY" required />
-                        <Field label="CVV" name="cardCvv" type="password" maxLength={4} required />
-                      </div>
-                    </div>
-                  )}
-                </fieldset>
-
-                {error && <p className="text-sm text-destructive">{error}</p>}
-                {submitError && <p className="text-sm text-destructive">Something went wrong. Please try again.</p>}
+                {error && <p className="text-sm text-red-400">{error}</p>}
+                {submitError && <p className="text-sm text-red-400">{submitError}</p>}
 
                 <button
                   type="submit"
-                  className="w-full bg-gold py-4 text-xs font-semibold uppercase tracking-[0.22em] text-[#1a1305] transition hover:bg-gold-hover active:bg-gold-press"
+                  disabled={isSubmitting}
+                  className="w-full bg-gold py-4 text-xs font-semibold uppercase tracking-[0.22em] text-[#1a1305] transition hover:bg-gold-hover active:bg-gold-press disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Confirm My Reservation
+                  {isSubmitting ? "Submitting..." : "Confirm My Reservation"}
                 </button>
                 <p className="text-center text-[0.7rem] uppercase tracking-[0.2em] text-ivory/55">
                   Prefer to call? {BRAND.phones[0]} · {BRAND.phones[1]}
@@ -210,7 +186,7 @@ function ReservationsPage() {
       <section className="bg-night-2 py-16">
         <div className="mx-auto grid max-w-6xl gap-5 px-6 sm:grid-cols-3">
           <Card icon={MapPin} title="Find Us" lines={[BRAND.address.line1, BRAND.address.line2]} />
-          <Card icon={Phone} title="Call Us" lines={BRAND.phones} hrefs={BRAND.phones.map((p) => `tel:${p.replace(/\s/g, "")}`)} />
+          <Card icon={Phone} title="Call Us" lines={BRAND.phones} hrefs={BRAND.phones.map((p) => `tel:${p.replace(/\s/g, "")}` )} />
           <Card icon={Mail} title="Email Us" lines={BRAND.emails} hrefs={BRAND.emails.map((e) => `mailto:${e}`)} />
         </div>
       </section>
@@ -256,6 +232,7 @@ function Select({ label, name, options, defaultValue }: { label: string; name: s
         required
         className="mt-2 w-full border border-gold/25 bg-night-2 px-4 py-3 text-base text-ivory focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold"
       >
+        <option value="">Select an option</option>
         {options.map((o) => (
           <option key={o} value={o}>{o}</option>
         ))}
